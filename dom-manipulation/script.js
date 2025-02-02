@@ -26,6 +26,9 @@ async function syncQuotes() {
             }
         });
 
+        // Notify user that the quotes have been synced
+        notifyUser('Quotes synced with server!');
+
     } catch (error) {
         console.error("Error syncing quotes:", error);
     }
@@ -62,7 +65,6 @@ function mergeQuotes(localQuotes, serverQuotes) {
     return merged;
 }
 
-
 function saveQuotes() {
     localStorage.setItem("quotes", JSON.stringify(quotes));
 }
@@ -70,7 +72,6 @@ function saveQuotes() {
 async function syncLocalChanges() {
     try {
         for (const quote of quotes) {
-           
             await fetch(API_URL, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -112,7 +113,6 @@ function populateCategories() {
     });
 }
 
-
 async function addQuote() {
     const text = document.getElementById("newQuoteText").value.trim();
     const category = document.getElementById("newQuoteCategory").value.trim();
@@ -124,7 +124,6 @@ async function addQuote() {
 
     const newQuote = { text, category };
 
-   
     quotes.push(newQuote);
     saveQuotes();
     await syncLocalChanges();
@@ -144,9 +143,7 @@ function createAddQuoteForm() {
     document.getElementById("addQuoteBtn").addEventListener("click", addQuote);
 }
 
-
 setInterval(fetchQuotesFromServer, 30000); 
-
 
 document.addEventListener("DOMContentLoaded", async () => {
     createAddQuoteForm();
@@ -154,6 +151,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     populateCategories();
     showRandomQuote();
     newQuoteButton.addEventListener("click", showRandomQuote);
+
+    // Notify user when sync is complete
+    async function fetchQuotesFromServer() {
+        try {
+            const response = await fetch(API_URL);
+            const serverQuotes = await response.json();
+
+            const oldQuoteCount = quotes.length;
+            quotes = mergeQuotes(quotes, serverQuotes);
+            saveQuotes();
+            populateCategories();
+            showRandomQuote();
+
+            if (quotes.length > oldQuoteCount) {
+                notifyUser("New quotes have been added from the server!");
+            }
+
+            // Sync the quotes with the server
+            syncQuotes();
+
+        } catch (error) {
+            console.error("Error fetching server quotes:", error);
+        }
+    }
 
     function notifyUser(message) {
         const notification = document.createElement("div");
@@ -167,24 +188,5 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.body.appendChild(notification);
     
         setTimeout(() => notification.remove(), 3000);
-    }
-    
-    async function fetchQuotesFromServer() {
-        try {
-            const response = await fetch(API_URL);
-            const serverQuotes = await response.json();
-    
-            const oldQuoteCount = quotes.length;
-            quotes = mergeQuotes(quotes, serverQuotes);
-            saveQuotes();
-            populateCategories();
-            showRandomQuote();
-    
-            if (quotes.length > oldQuoteCount) {
-                notifyUser("New quotes have been added from the server!");
-            }
-        } catch (error) {
-            console.error("Error fetching server quotes:", error);
-        }
     }
 });
