@@ -2,6 +2,35 @@ const API_URL = "https://jsonplaceholder.typicode.com/posts";
 
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [];
 
+async function syncQuotes() {
+    try {
+        const response = await fetch(API_URL);
+        const serverQuotes = await response.json();
+
+        const localQuotes = JSON.parse(localStorage.getItem('quotes') || '[]');
+
+        localQuotes.forEach(localQuote => {
+            const serverQuote = serverQuotes.find(q => q.text === localQuote.text);
+            
+            if (!serverQuote) {
+                console.log(`Posting new quote: ${localQuote.text}`);
+                postQuoteToServer(localQuote);
+            }
+        });
+
+        serverQuotes.forEach(serverQuote => {
+            const localQuote = localQuotes.find(q => q.text === serverQuote.text);
+            if (!localQuote) {
+                console.log(`Adding new quote from server: ${serverQuote.text}`);
+                addQuoteToLocalStorage(serverQuote);
+            }
+        });
+
+    } catch (error) {
+        console.error("Error syncing quotes:", error);
+    }
+}
+
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteButton = document.getElementById("newQuote");
 const categoryFilter = document.getElementById("categoryFilter");
