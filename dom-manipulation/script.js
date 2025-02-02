@@ -1,3 +1,4 @@
+
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [
     { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivation" },
     { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", category: "Success" },
@@ -5,25 +6,61 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
     { text: "Do what you can, with what you have, where you are.", category: "Inspiration" }
 ];
 
+
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteButton = document.getElementById("newQuote");
+const categoryFilter = document.getElementById("categoryFilter");
 const formContainer = document.getElementById("formContainer");
-const exportJsonButton = document.getElementById("exportJson");
-const importFileInput = document.getElementById("importFile");
+
+
+function populateCategories() {
+
+    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+
+
+    const categories = [...new Set(quotes.map(q => q.category))];
+
+
+    categories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+
+  
+    const lastSelectedCategory = localStorage.getItem("selectedCategory");
+    if (lastSelectedCategory) {
+        categoryFilter.value = lastSelectedCategory;
+    }
+}
+
 
 function showRandomQuote() {
-    if (quotes.length === 0) {
-        quoteDisplay.textContent = "No quotes available.";
+    let filteredQuotes = quotes;
+
+    const selectedCategory = categoryFilter.value;
+    if (selectedCategory !== "all") {
+        filteredQuotes = quotes.filter(q => q.category === selectedCategory);
+    }
+
+    if (filteredQuotes.length === 0) {
+        quoteDisplay.textContent = "No quotes available in this category.";
         return;
     }
 
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    const selectedQuote = quotes[randomIndex];
+    const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+    const selectedQuote = filteredQuotes[randomIndex];
 
     quoteDisplay.innerHTML = `"${selectedQuote.text}" <br> <strong>- ${selectedQuote.category}</strong>`;
-
-    sessionStorage.setItem("lastQuote", JSON.stringify(selectedQuote));
 }
+
+
+function filterQuotes() {
+    showRandomQuote();
+    localStorage.setItem("selectedCategory", categoryFilter.value); 
+}
+
 
 function createAddQuoteForm() {
     const form = document.createElement("div");
@@ -61,64 +98,24 @@ function addQuote() {
     }
 
     quotes.push({ text, category });
-    saveQuotes();  // Save to local storage
+    saveQuotes();  
 
     document.getElementById("newQuoteText").value = "";
     document.getElementById("newQuoteCategory").value = "";
 
+    populateCategories(); 
     alert("Quote added successfully!");
 }
+
 
 function saveQuotes() {
     localStorage.setItem("quotes", JSON.stringify(quotes));
 }
 
-function exportToJsonFile() {
-    const jsonString = JSON.stringify(quotes, null, 2);
-    const blob = new Blob([jsonString], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-
-    a.href = url;
-    a.download = "quotes.json";
-    a.click();
-    URL.revokeObjectURL(url);
-}
-
-function importFromJsonFile(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            const importedQuotes = JSON.parse(e.target.result);
-            if (Array.isArray(importedQuotes)) {
-                quotes.push(...importedQuotes);
-                saveQuotes();
-                alert("Quotes imported successfully!");
-            } else {
-                alert("Invalid JSON file format.");
-            }
-        } catch (error) {
-            alert("Error parsing JSON file.");
-        }
-    };
-    reader.readAsText(file);
-}
-
-function loadLastViewedQuote() {
-    const lastQuote = JSON.parse(sessionStorage.getItem("lastQuote"));
-    if (lastQuote) {
-        quoteDisplay.innerHTML = `"${lastQuote.text}" <br> <strong>- ${lastQuote.category}</strong>`;
-    }
-}
 
 document.addEventListener("DOMContentLoaded", () => {
     createAddQuoteForm();
+    populateCategories();
+    showRandomQuote(); 
     newQuoteButton.addEventListener("click", showRandomQuote);
-    exportJsonButton.addEventListener("click", exportToJsonFile);
-    importFileInput.addEventListener("change", importFromJsonFile);
-
-    loadLastViewedQuote(); 
 });
