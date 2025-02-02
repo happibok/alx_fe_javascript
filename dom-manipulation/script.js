@@ -1,4 +1,4 @@
-const API_URL = "https://my-mock-api.com/quotes"; 
+const API_URL = "https://jsonplaceholder.typicode.com/posts"; 
 
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [];
 
