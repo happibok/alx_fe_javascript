@@ -7,7 +7,7 @@ async function syncQuotes() {
         const response = await fetch(API_URL);
         const serverQuotes = await response.json();
 
-        const localQuotes = JSON.parse(localStorage.getItem('quotes') || '[]');
+        const localQuotes = JSON.parse(localStorage.getItem("quotes") || "[]");
 
         localQuotes.forEach(localQuote => {
             const serverQuote = serverQuotes.find(q => q.text === localQuote.text);
@@ -25,9 +25,6 @@ async function syncQuotes() {
                 addQuoteToLocalStorage(serverQuote);
             }
         });
-
-        // Notify user that the quotes have been synced
-        notifyUser('Quotes synced with server!');
 
     } catch (error) {
         console.error("Error syncing quotes:", error);
@@ -143,7 +140,7 @@ function createAddQuoteForm() {
     document.getElementById("addQuoteBtn").addEventListener("click", addQuote);
 }
 
-setInterval(fetchQuotesFromServer, 30000); 
+setInterval(fetchQuotesFromServer, 30000);
 
 document.addEventListener("DOMContentLoaded", async () => {
     createAddQuoteForm();
@@ -151,30 +148,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     populateCategories();
     showRandomQuote();
     newQuoteButton.addEventListener("click", showRandomQuote);
-
-    // Notify user when sync is complete
-    async function fetchQuotesFromServer() {
-        try {
-            const response = await fetch(API_URL);
-            const serverQuotes = await response.json();
-
-            const oldQuoteCount = quotes.length;
-            quotes = mergeQuotes(quotes, serverQuotes);
-            saveQuotes();
-            populateCategories();
-            showRandomQuote();
-
-            if (quotes.length > oldQuoteCount) {
-                notifyUser("New quotes have been added from the server!");
-            }
-
-            // Sync the quotes with the server
-            syncQuotes();
-
-        } catch (error) {
-            console.error("Error fetching server quotes:", error);
-        }
-    }
 
     function notifyUser(message) {
         const notification = document.createElement("div");
@@ -189,4 +162,68 @@ document.addEventListener("DOMContentLoaded", async () => {
     
         setTimeout(() => notification.remove(), 3000);
     }
+    
+    async function fetchQuotesFromServer() {
+        try {
+            const response = await fetch(API_URL);
+            const serverQuotes = await response.json();
+    
+            const oldQuoteCount = quotes.length;
+            quotes = mergeQuotes(quotes, serverQuotes);
+            saveQuotes();
+            populateCategories();
+            showRandomQuote();
+    
+            if (quotes.length > oldQuoteCount) {
+                notifyUser("New quotes have been added from the server!");
+            }
+        } catch (error) {
+            console.error("Error fetching server quotes:", error);
+        }
+    }
 });
+
+/* ********** Blob for Export and Import ********** */
+
+// Export Quotes as JSON File
+document.getElementById("exportQuotes").addEventListener("click", exportToJsonFile);
+
+function exportToJsonFile() {
+    const jsonData = JSON.stringify(quotes, null, 2);
+    const blob = new Blob([jsonData], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "quotes.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// Import Quotes from JSON File
+document.getElementById("importFile").addEventListener("change", importFromJsonFile);
+
+function importFromJsonFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedQuotes = JSON.parse(e.target.result);
+            if (Array.isArray(importedQuotes)) {
+                quotes.push(...importedQuotes);
+                saveQuotes();
+                populateCategories();
+                alert("Quotes imported successfully!");
+            } else {
+                alert("Invalid file format. Please upload a valid JSON file.");
+            }
+        } catch (error) {
+            alert("Error importing file: " + error.message);
+        }
+    };
+    reader.readAsText(file);
+}
