@@ -4,7 +4,7 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [];
 
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteButton = document.getElementById("newQuote");
-const categoryFilter = document.getElementById("categoryFilter");
+const selectedCategory = document.getElementById("selectedCategory");
 const formContainer = document.getElementById("formContainer");
 async function fetchQuotesFromServer() {
     try {
@@ -153,10 +153,7 @@ function importFromJsonFile(event) {
     };
     fileReader.readAsText(event.target.files[0]);
 }
-
 setInterval(fetchQuotesFromServer, 30000);
-
-// 🚀 Initialize the App
 document.addEventListener("DOMContentLoaded", async () => {
     createAddQuoteForm();
     await fetchQuotesFromServer();
